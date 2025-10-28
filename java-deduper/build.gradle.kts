@@ -18,5 +18,6 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.example.dedup.DedupStreamApp")
+    // mainClass.set("com.example.dedup.DedupStreamApp")
+    mainClass.set("com.example.dedup.WindowedDedup")
 }

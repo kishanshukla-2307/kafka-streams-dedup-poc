@@ -6,13 +6,14 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.state.WindowStore;
 import java.time.Duration;
 import java.util.Properties;
 
 public class WindowedDedup {
 
     // Define the time window for deduplication (5 minutes)
-    private static final Duration DEDUP_WINDOW_SIZE = Duration.ofMinutes(5);
+    private static final Duration DEDUP_WINDOW_SIZE = Duration.ofMinutes(30);
 
     public static void main(String[] args) {
         final String bootstrap  = args.length > 0 ? args[0] : "localhost:9092";
@@ -29,14 +30,41 @@ public class WindowedDedup {
 
         StreamsBuilder builder = new StreamsBuilder();
 
+        // builder.stream(inputTopic, Consumed.with(Serdes.String(), Serdes.String()))
+        //        // CRITICAL STEP 0: Filter out records with null keys, as they cannot be grouped correctly.
+        //        // Only records with a non-null key are eligible for groupByKey and windowing.
+        //        .filter((key, value) -> key != null)
+        //        // 1. Group records by key.
+        //        .groupByKey()
+        //        // 2. Define a 5-minute tumbling window. All duplicates within this window will be dropped.
+        //        // Grace period is set to zero, meaning late events outside the window will be dropped.
+        //        .windowedBy(TimeWindows.of(DEDUP_WINDOW_SIZE).grace(Duration.ofMinutes(0)))
+        //        // 3. Reduce: Keep the first record received (v1) and discard any subsequent duplicates (v2) within the window.
+        //        // The KTable produced here will only update when a new key is seen for the first time in a window.
+        //        .reduce((v1, v2) -> v1, Materialized.as("dedup-window-store"))
+        //        // 4. Convert the KTable back to a KStream. This KStream emits an event ONLY when a record is first reduced.
+        //        .toStream()
+        //        // 5. Map the key back from Windowed<String> to String for the output topic.
+        //        .map((windowedKey, value) -> new KeyValue<>(windowedKey.key(), value))
+        //        // 6. Send the deduplicated, time-windowed record to the output topic.
+        //        .to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
+
+        
+
         builder.stream(inputTopic, Consumed.with(Serdes.String(), Serdes.String()))
                // 1. Group records by key.
                .groupByKey()
                // 2. Define a 5-minute tumbling window. All duplicates within this window will be dropped.
-               .windowedBy(TimeWindows.of(DEDUP_WINDOW_SIZE).grace(Duration.ofMinutes(0)))
+               .windowedBy(TimeWindows.of(DEDUP_WINDOW_SIZE).grace(Duration.ofMinutes(10)))
                // 3. Reduce: Keep the first record received (v1) and discard any subsequent duplicates (v2) within the window.
                // The KTable produced here will only update when a new key is seen for the first time in a window.
-               .reduce((v1, v2) -> v1, Materialized.as("dedup-window-store"))
+            //    .reduce((v1, v2) -> v1, Materialized.as("dedup-window-store"))
+
+               .aggregate(
+                () -> null, /* initializer */
+                (aggKey, newValue, aggValue) -> aggValue, /* adder */
+                Materialized.<String, Long, WindowStore<Byte, byte[]>>as("time-windowed-aggregated-stream-store") /* state store name */
+                .withValueSerde(Serdes.Long())) /* serde for aggregate value */
                // 4. Convert the KTable back to a KStream. This KStream emits an event ONLY when a record is first reduced.
                .toStream()
                // 5. Map the key back from Windowed<String> to String for the output topic.

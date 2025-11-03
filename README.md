@@ -34,7 +34,7 @@ This is where we do the actual deduplication. The *reduce* takes a lambda expres
 
 This is the lambda we have used. When the first record arrives for a window, the value of that record is used as the initial aggVal. For the subsequent records, we just ignore the records value and keep the same aggVal; as can be seen from the lambda exp.
 
-The *reduce* transform returns a Ktable. Ktable has a property of emitting records for downstream operators whenever the table is updated. This is to ensure the streaming application provides continuous fresh values (More can be read about this [here](https://kafka.apache.org/41/documentation/streams/developer-guide/dsl-api.html#controlling-emit-rate)). But in our case, we want only one value to be emitted per window, which is enforced by the *suppress* operator. 
+The *reduce* transform returns a Ktable. Ktable has a property of emitting records for downstream operators whenever the table is updated. This is to ensure the streaming application provides continuous fresh values (More can be read about this [here](https://kafka.apache.org/41/documentation/streams/developer-guide/dsl-api.html#window-final-results) and [here](https://kafka.apache.org/41/documentation/streams/developer-guide/dsl-api.html#controlling-emit-rate)). But in our case, we want only one value to be emitted per window, which is enforced by the *suppress* operator. 
 
 After suppress we just do some formatting and publish to the deduped topic.
 

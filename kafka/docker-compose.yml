@@ -1,0 +1,88 @@
+version: "3.9"
+
+services:
+  broker:
+    image: apache/kafka:latest
+    container_name: broker
+    environment:
+      # KRaft single-node
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://broker:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+
+      # KRaft controller settings
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:9093
+
+      # Single-node dev-friendly factors
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 1
+      # KAFKA_CREATE_TOPICS: "raw_block_data:1:1,deduped_block_data:1:1"
+      # KAFKA_CREATE_TOPICS: "raw_block_data:1:1"
+      # KAFKA_CREATE_TOPICS: "raw_msgs:1:1,deduped_msgs:1:1"
+    ports:
+      - "9092:9092"
+
+  # schema-registry:
+  #   image: confluentinc/cp-schema-registry:7.6.1
+  #   container_name: schema-registry
+  #   depends_on:
+  #     - broker
+  #   environment:
+  #     SCHEMA_REGISTRY_HOST_NAME: schema-registry
+  #     SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+  #     SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker:29092
+  #     SCHEMA_REGISTRY_DEBUG: "true"
+  #   ports:
+  #     - "8081:8081"
+
+  # --- PostgreSQL Service ---
+#   postgres:
+#     image: postgres:15
+#     container_name: postgres
+#     environment:
+#       POSTGRES_USER: user
+#       POSTGRES_PASSWORD: password
+#       POSTGRES_DB: kafkastore
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       # This line loads the schema.sql file on first run
+#       - ./kafka/consumer/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+#       # This line persists the database data
+#       - postgres-data:/var/lib/postgresql/data
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U user -d kafkastore"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#     restart: unless-stopped
+
+#   # --- pgAdmin Service ---
+#   pgadmin:
+#     image: dpage/pgadmin4
+#     container_name: pgadmin
+#     depends_on:
+#       postgres:
+#         condition: service_healthy
+#     environment:
+#       PGADMIN_DEFAULT_EMAIL: admin@example.com
+#       PGADMIN_DEFAULT_PASSWORD: admin
+#       PGADMIN_CONFIG_SERVER_MODE: "False"
+#     ports:
+#       - "5050:80"
+#     volumes:
+#       - pgadmin-data:/var/lib/pgadmin
+#     restart: unless-stopped
+
+# # --- Named Volumes for Data Persistence ---
+# volumes:
+#   postgres-data:
+#   pgadmin-data:

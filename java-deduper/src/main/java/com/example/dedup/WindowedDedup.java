@@ -132,10 +132,10 @@ public class WindowedDedup {
         p.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         p.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 200);
         p.put(StreamsConfig.MAX_TASK_IDLE_MS_CONFIG, Duration.ofSeconds(5).toMillis()); 
+        // p.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 10 * 1024 * 1024L);
 
         StreamsBuilder builder = new StreamsBuilder();
 
-        // Explicitly define the Materialized store for clarity and type safety
         Materialized<String, String, WindowStore<Bytes, byte[]>> dedupStore = 
             Materialized.<String, String, WindowStore<Bytes, byte[]>>as("dedup-window-store")
                 .withKeySerde(Serdes.String())
@@ -162,9 +162,6 @@ public class WindowedDedup {
                .to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
 
         KafkaStreams streams = new KafkaStreams(builder.build(), p);
-        
-        // Mandatory for clean testing cycles
-        streams.cleanUp(); 
 
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
         streams.start();

@@ -1,0 +1,2 @@
+docker exec -it ce7a3dbcd274 /opt/kafka/bin/kafka-topics.sh --create --topic input --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+docker exec -it ce7a3dbcd274 /opt/kafka/bin/kafka-topics.sh --create --topic output --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1

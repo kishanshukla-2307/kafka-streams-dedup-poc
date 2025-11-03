@@ -68,3 +68,27 @@ Kafka streams also provides *exactly-once* processing gurantees, which is config
 Now the issue with our approach is that our local state store is going to grow indefinitely. To solve this, Kafka Streams provides a WindowStore which keeps the data only for the specified time period and purges it afterwards.
 
 
+### Demo
+
+To test if the approahes work, I have created a mock producer under */kafka* which imitates multiple validators pushing block data to a *input* topic. And i have a mock consumer which consumes from *output* topic. 
+
+To test Approach 1:
+
+
+1.  Do *docker compose up -d* in /kafka dir to spin up a kafka broker
+2.  Create input and output topic by running following cmd:
+    -   *docker exec -it {kafka_container_id} /opt/kafka/bin/kafka-topics.sh --create --topic input --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1*
+    -   *docker exec -it {kafka_container_id} /opt/kafka/bin/kafka-topics.sh --create --topic output --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1*
+3. Make sure main class is set to *com.example.dedup.WindowedDedup* in *build.gradle.kts*
+4. Run the deduper using following cmd:
+    -   *./gradlew clean run --args "localhost:9092 input output kstreams-dedup"*
+5. Run the producer and consumer in separate terminals 
+
+
+You should see duplicated msgs in producers terminal and deduplicated msgs in consumers.
+
+To test Approach 2:
+
+Do the same as approach 1, except set the main class to *com.example.dedup.DedupStreamApp*
+
+

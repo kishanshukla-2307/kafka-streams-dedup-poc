@@ -35,12 +35,16 @@ public class DedupTransformer implements Transformer<String, String, KeyValue<St
             eventTime - minSpaceBtwEvents, 
             eventTime + minSpaceBtwEvents);
 
-        // update the latest timestamp for the event
-        seen.put(key, eventTime, eventTime);
         if (iterator.hasNext()) {
-            // already seen, do nothing
+            // update the latest timestamp for the event
+            seen.put(key, eventTime, eventTime);
+            iterator.close();
+            // already seen, return null
             return null;
         } else {
+            // update the latest timestamp for the event
+            seen.put(key, eventTime, eventTime);
+            iterator.close();
             return new KeyValue<>(key, value);
         }
     }

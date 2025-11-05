@@ -16,9 +16,9 @@ public class DedupStreamApp {
         final String bootstrap  = args.length>0?args[0]:"localhost:9092";
         final String inputTopic = args.length>1?args[1]:"input";
         final String outputTopic= args.length>2?args[2]:"output";
+        final long minSpaceBtwEvents = args.length>3?Long.parseLong(args[3]):1000 * 60 * 2; // in ms
         final String appId      = "kstreams-dedup";
         final String storeName  = "seen-store";
-        final long minSpaceBtwEvents = 10;
 
         Properties p = new Properties();
         p.put(StreamsConfig.APPLICATION_ID_CONFIG, appId);
